@@ -2,6 +2,12 @@
 
 Ứng dụng quiz với khả năng nhận diện giọng nói, sử dụng Next.js cho frontend và FastAPI cho backend.
 
+## Ảnh màn hình
+
+![Giao diện chính của Olympia Quiz App](./screen2.png)
+![Giao diện câu hỏi](./screen1.png)
+
+
 ## Tính năng
 
 - Giao diện người dùng hiện đại với TailwindCSS và Shadcn/UI components
