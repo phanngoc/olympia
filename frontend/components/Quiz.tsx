@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useQuizStore } from '@/store/quizStore';
 import { Button } from '@/components/ui/button';
@@ -6,8 +8,9 @@ import { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Mic, User2, ArrowRight, SkipForward, Loader } from 'lucide-react';
+import { Mic, User2, ArrowRight, SkipForward, Loader, Clock } from 'lucide-react';
 import { playSound } from '@/utils/sound';
+import CountdownTimer from './CountdownTimer';
 
 interface Question {
   id: number;
@@ -26,6 +29,11 @@ export default function Quiz({ onComplete }: QuizProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [result, setResult] = useState<{score: number, feedback: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Timer related states
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [resetTimer, setResetTimer] = useState(false);
+  const TIMER_DURATION = 10; // 10 seconds for answering
 
   useEffect(() => {
     fetchRandomQuestion();
@@ -39,6 +47,10 @@ export default function Quiz({ onComplete }: QuizProps) {
       setCurrentQuestion(data);
       setUserAnswer('');
       setResult(null);
+      
+      // Reset and start timer for the new question
+      setResetTimer(prev => !prev); // Toggle to trigger reset effect
+      setIsTimerRunning(true);
     } catch (error) {
       console.error('Error fetching question:', error);
     } finally {
@@ -48,6 +60,9 @@ export default function Quiz({ onComplete }: QuizProps) {
 
   const startRecording = async () => {
     try {
+      // Stop the timer when recording starts
+      setIsTimerRunning(false);
+      
       playSound('recording');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -77,16 +92,66 @@ export default function Quiz({ onComplete }: QuizProps) {
       mediaRecorder.start();
       setIsRecording(true);
 
+      // Create a variable to track if the timer has been stopped
+      let isRecordingStopped = false;
+
+      // Set up a check for timer expiration
+      const timerCheckInterval = setInterval(() => {
+        if (!isTimerRunning && !isRecordingStopped) {
+          mediaRecorder.stop();
+          stream.getTracks().forEach(track => track.stop());
+          setIsRecording(false);
+          isRecordingStopped = true;
+          clearInterval(timerCheckInterval);
+        }
+      }, 500);
+
+      // Normal recording stop after 5 seconds
       setTimeout(() => {
-        mediaRecorder.stop();
-        setIsRecording(false);
+        if (!isRecordingStopped) {
+          mediaRecorder.stop();
+          stream.getTracks().forEach(track => track.stop());
+          setIsRecording(false);
+          isRecordingStopped = true;
+          clearInterval(timerCheckInterval);
+        }
       }, 5000);
     } catch (error) {
       console.error('Error accessing microphone:', error);
     }
   };
 
+  const handleTimeout = () => {
+    if (result || userAnswer) return; // Do nothing if already answered
+    
+    // Stop the timer
+    setIsTimerRunning(false);
+    
+    playSound('incorrect');
+    
+    // Mark as incorrect automatically
+    const timeoutResult = {
+      score: 0,
+      feedback: "Hết thời gian! Bạn chưa trả lời câu hỏi này kịp thời."
+    };
+    
+    setResult(timeoutResult);
+    
+    // Add to quiz history with empty answer
+    if (currentQuestion) {
+      addQuizResult({
+        question: currentQuestion.question,
+        userAnswer: "Không trả lời kịp thời",
+        correctAnswer: currentQuestion.answer,
+        score: 0
+      });
+    }
+  };
+
   const evaluateAnswer = async () => {
+    // Stop the timer when evaluating
+    setIsTimerRunning(false);
+    
     if (!currentQuestion) return;
 
     try {
@@ -147,7 +212,13 @@ export default function Quiz({ onComplete }: QuizProps) {
         {/* Header with progress */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-amber-300">Olympia Quiz</h1>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
+            <CountdownTimer 
+              duration={TIMER_DURATION} 
+              onTimeout={handleTimeout}
+              isRunning={isTimerRunning}
+              reset={resetTimer}
+            />
             <div className="text-sm text-indigo-200">Câu hỏi {currentQuestionNumber}/{totalQuestions}</div>
             <Progress value={(currentQuestionNumber / totalQuestions) * 100} className="w-32 h-2" />
           </div>
