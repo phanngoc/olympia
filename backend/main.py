@@ -71,6 +71,7 @@ async def create_question(question: Question, session: Session = Depends(get_ses
     session.refresh(question)
     return question
 
+MODEL_NAME = "gpt-4o-mini"  # Change to your preferred model
 @app.post("/evaluate")
 async def evaluate_answer(
     question_id: int = Body(...),
@@ -87,20 +88,20 @@ async def evaluate_answer(
         try:
             # Try with response_format first (for newer models)
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",  # Use a model that supports JSON response format
+                model=MODEL_NAME,  # Use a model that supports JSON response format
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that evaluates answers to questions. Respond with a JSON object containing 'score' (0-100) and 'feedback'."},
-                    {"role": "user", "content": f"Question: {question.question}\nCorrect Answer: {question.answer}\nStudent Answer: {answer}\nEvaluate the answer and provide a score and feedback."}
+                    {"role": "system", "content": "Bạn là trợ lý đánh giá câu trả lời cho học sinh Việt Nam. Hãy đánh giá câu trả lời một cách linh hoạt, chấp nhận câu trả lời gần đúng. Trả về dưới dạng JSON với 'score' (0-100) và 'feedback' bằng tiếng Việt."},
+                    {"role": "user", "content": f"Câu hỏi: {question.question}\nĐáp án đúng: {question.answer}\nCâu trả lời của học sinh: {answer}\nHãy đánh giá câu trả lời và cho điểm, đồng thời đưa ra nhận xét."}
                 ],
                 response_format={"type": "json_object"}
             )
         except Exception as e:
             # Fallback to standard response without response_format
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=MODEL_NAME,
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that evaluates answers to questions. Respond with a JSON object containing 'score' (0-100) and 'feedback'."},
-                    {"role": "user", "content": f"Question: {question.question}\nCorrect Answer: {question.answer}\nStudent Answer: {answer}\nEvaluate the answer and provide a score and feedback."}
+                    {"role": "system", "content": "Bạn là trợ lý đánh giá câu trả lời cho học sinh Việt Nam. Hãy đánh giá câu trả lời một cách linh hoạt, chấp nhận câu trả lời gần đúng. Trả về dưới dạng JSON với 'score' (0-100) và 'feedback' bằng tiếng Việt."},
+                    {"role": "user", "content": f"Câu hỏi: {question.question}\nĐáp án đúng: {question.answer}\nCâu trả lời của học sinh: {answer}\nHãy đánh giá câu trả lời và cho điểm, đồng thời đưa ra nhận xét."}
                 ]
             )
         
