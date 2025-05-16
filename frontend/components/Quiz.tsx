@@ -60,6 +60,9 @@ export default function Quiz({ onComplete }: QuizProps) {
 
   const startRecording = async () => {
     try {
+      // Stop the timer when recording starts
+      setIsTimerRunning(false);
+      
       playSound('recording');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
