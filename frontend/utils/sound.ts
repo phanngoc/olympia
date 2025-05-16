@@ -1,3 +1,5 @@
+'use client';
+
 // Sound utility for quiz app
 export const playSound = (type: 'correct' | 'incorrect' | 'recording' | 'complete') => {
   // Map of sound types to their paths

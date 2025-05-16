@@ -1,8 +1,11 @@
+'use client';
+
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Welcome from './Welcome';
 import Quiz from './Quiz';
 import Results from './Results';
+import ClientOnly from './ClientOnly';
 
 enum QuizState {
   WELCOME,
@@ -14,8 +17,9 @@ export default function QuizLayout() {
   const [quizState, setQuizState] = useState<QuizState>(QuizState.WELCOME);
   
   return (
-    <AnimatePresence mode="wait">
-      {quizState === QuizState.WELCOME && (
+    <ClientOnly>
+      <AnimatePresence mode="wait">
+        {quizState === QuizState.WELCOME && (
         <motion.div
           key="welcome"
           initial={{ opacity: 0 }}
@@ -56,6 +60,7 @@ export default function QuizLayout() {
           />
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </ClientOnly>
   );
 }

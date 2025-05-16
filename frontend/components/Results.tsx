@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { useQuizStore } from '@/store/quizStore';
 import { Card } from '@/components/ui/card';
